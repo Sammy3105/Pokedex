@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokédex</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f0f8ff;
+            font-family: Arial, sans-serif;
+        }
+        .header {
+            background-color: #ffcb05;
+            color: #2a75bb;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-bottom: 5px solid #2a75bb;
+        }
+        .pokemon-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .pokemon-image {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto;
+            display: block;
+        }
+        .type-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            margin: 5px;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+        }
+        .stats {
+            text-align: left;
+            margin-top: 15px;
+        }
+        .search-btn {
+            background-color: #2a75bb;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .search-btn:hover {
+            background-color: #1c5aa0;
+        }
+        .search-box {
+            padding: 10px;
+            width: 70%;
+            border-radius: 5px;
+            border: 2px solid #2a75bb;
+        }
+    </style>
+</head>
+<body>
+    <div class="header text-center">
+        <h1>Pokédex</h1>
+        <p>Digite o nome ou número do Pokémon</p>
+        <input type="text" id="pokemonName" class="search-box" placeholder="Ex: pikachu ou 25">
+        <br>
+        <button onclick="searchPokemon()" class="search-btn">Buscar Pokémon</button>
+    </div>
+
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="pokemon-card">
+                    <h2 id="name">Pikachu #025</h2>
+                    <img id="image" class="pokemon-image" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png" alt="Pokémon">
+                    
+                    <div id="types">
+                        <span class="type-badge" style="background-color: #F7D02C;">Elétrico</span>
+                    </div>
+                    
+                    <div class="stats">
+                        <h4>Estatísticas:</h4>
+                        <div id="stats">
+                            <p>HP: 35</p>
+                            <p>Ataque: 55</p>
+                            <p>Defesa: 40</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <h4>Habilidades:</h4>
+                        <div id="abilities">
+                            <span class="badge badge-secondary">Static</span>
+                            <span class="badge badge-secondary">Lightning Rod</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <h4>Descrição:</h4>
+                        <p id="description">Quando vários desses Pokémon se reúnem, sua energia pode causar tempestades com raios.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Cores para os tipos de Pokémon
+        const typeColors = {
+            normal: '#A8A77A', fire: '#EE8130', water: '#6390F0', electric: '#F7D02C',
+            grass: '#7AC74C', ice: '#96D9D6', fighting: '#C22E28', poison: '#A33EA1',
+            ground: '#E2BF65', flying: '#A98FF3', psychic: '#F95587', bug: '#A6B91A',
+            rock: '#B6A136', ghost: '#735797', dragon: '#6F35FC', dark: '#705746',
+            steel: '#B7B7CE', fairy: '#D685AD'
+        };
+
+        // Função principal para buscar Pokémon
+        function searchPokemon() {
+            let pokemon = document.getElementById('pokemonName').value.toLowerCase();
+            
+            if (!pokemon) {
+                alert("Por favor, digite o nome ou número de um Pokémon!");
+                return;
+            }
+            
+            // Limpar dados anteriores
+            document.getElementById('name').textContent = "Carregando...";
+            document.getElementById('types').innerHTML = "";
+            document.getElementById('stats').innerHTML = "";
+            document.getElementById('abilities').innerHTML = "";
+            document.getElementById('description').textContent = "Buscando informações...";
+            
+            // Buscar dados do Pokémon
+            fetch(`https://pokeapi.co/api/v2/pokemon/${pokemon}`)
+                .then(response => {
+                    if (!response.ok) throw new Error("Pokémon não encontrado!");
+                    return response.json();
+                })
+                .then(data => showPokemonData(data))
+                .catch(error => {
+                    document.getElementById('name').textContent = "Pokémon não encontrado!";
+                    document.getElementById('description').textContent = error.message;
+                });
+        }
+
+        // Mostrar os dados do Pokémon
+        function showPokemonData(data) {
+            // Nome e número
+            document.getElementById('name').textContent = 
+                `${data.name.charAt(0).toUpperCase() + data.name.slice(1)} #${data.id.toString().padStart(3, '0')}`;
+            
+            // Imagem
+            document.getElementById('image').src = 
+                data.sprites.other['official-artwork'].front_default || data.sprites.front_default;
+            
+            // Tipos
+            let typesHtml = "";
+            data.types.forEach(typeInfo => {
+                const type = typeInfo.type.name;
+                typesHtml += `<span class="type-badge" style="background-color: ${typeColors[type] || '#777'};">${type.charAt(0).toUpperCase() + type.slice(1)}</span>`;
+            });
+            document.getElementById('types').innerHTML = typesHtml;
+            
+            // Estatísticas
+            let statsHtml = "";
+            data.stats.forEach(statInfo => {
+                statsHtml += `<p>${statInfo.stat.name.charAt(0).toUpperCase() + statInfo.stat.name.slice(1)}: ${statInfo.base_stat}</p>`;
+            });
+            document.getElementById('stats').innerHTML = statsHtml;
+            
+            // Habilidades
+            let abilitiesHtml = "";
+            data.abilities.forEach(abilityInfo => {
+                abilitiesHtml += `<span class="badge badge-secondary mr-1">${abilityInfo.ability.name.charAt(0).toUpperCase() + abilityInfo.ability.name.slice(1)}</span>`;
+            });
+            document.getElementById('abilities').innerHTML = abilitiesHtml;
+            
+            // Buscar descrição
+            fetch(data.species.url)
+                .then(response => response.json())
+                .then(speciesData => {
+                    const flavorTexts = speciesData.flavor_text_entries;
+                    const ptEntry = flavorTexts.find(entry => entry.language.name === 'pt');
+                    const enEntry = flavorTexts.find(entry => entry.language.name === 'en');
+                    
+                    if (ptEntry) {
+                        document.getElementById('description').textContent = ptEntry.flavor_text.replace(/\f/g, ' ');
+                    } else if (enEntry) {
+                        document.getElementById('description').textContent = enEntry.flavor_text.replace(/\f/g, ' ');
+                    } else {
+                        document.getElementById('description').textContent = "Descrição não disponível.";
+                    }
+                })
+                .catch(() => {
+                    document.getElementById('description').textContent = "Não foi possível carregar a descrição.";
+                });
+        }
+
+        // Buscar Pikachu quando a página carregar
+        window.onload = function() {
+            searchPokemon();
+        };
+    </script>
+</body>
+</html>
